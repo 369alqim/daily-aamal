@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>ڈیلی اعمال نبویﷺ</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Noto Nastaliq Urdu', serif;
+      direction: rtl;
+      padding: 20px;
+      background-color: #f9fafb;
+    }
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: center;
+      padding: 10px;
+    }
+    .header-title {
+      text-align: center;
+      font-size: 64px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      background-color: #1d4ed8;
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .date-box {
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      background-color: #fef3c7;
+      padding: 15px;
+      border-radius: 10px;
+      color: #78350f;
+    }
+    .controls {
+      background-color: #e0f2fe;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .controls button {
+      font-size: 18px;
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header-title">ڈیلی اعمال نبویﷺ</div>
+<div class="date-box">تاریخ: 11/5/2025</div>
+
+<div class="controls">
+  <button onclick="clearTable()">🧹 کلئیر</button>
+  <button onclick="toggleLanguage()">🌐 اردو / English</button>
+  <button onclick="downloadPDF()">📄 PDF ڈاؤنلوڈ کریں</button>
+</div>
+
+<table id="tafseelTable">
+  <thead>
+    <tr>
+      <th style="min-width: 200px; font-size: 18px;">تفصیل</th>
+      <script>
+        const dayColors = [
+          '#fde68a', '#fca5a5', '#bbf7d0', '#93c5fd', '#f9a8d4', '#fcd34d', '#c4b5fd',
+          '#fdba74', '#6ee7b7', '#bfdbfe', '#f87171', '#facc15', '#34d399', '#818cf8',
+          '#fda4af', '#fef08a', '#60a5fa', '#a5f3fc', '#c084fc', '#fcd34d', '#86efac',
+          '#93c5fd', '#fda4af', '#fde68a', '#bbf7d0', '#f87171', '#c4b5fd', '#fef08a',
+          '#6ee7b7', '#fdba74', '#a5f3fc'
+        ];
+        for (let i = 1; i <= 31; i++) {
+          document.write(`<th style='min-width: 100px; background-color: ${dayColors[i-1]}; font-size: 16px;'>${i}</th>`);
+        }
+        document.write(`<th style='min-width: 100px; background-color: #d1fae5; font-size: 16px;'>کل</th>`);
+      </script>
+    </tr>
+  </thead>
+  <tbody>
+    <script>
+      const savedData = JSON.parse(localStorage.getItem('tafseelData') || '[]');
+      for (let row = 0; row < 13; row++) {
+        document.write('<tr>');
+        const taf = savedData[row]?.tafseel || `تفصیل ${row + 1}`;
+        document.write(`<td contenteditable='true' style='font-size:20px; padding:10px;' oninput='saveData()'>${taf}</td>`);
+
+        for (let col = 0; col < 31; col++) {
+          const val = savedData[row]?.data?.[col] || '';
+          document.write(`<td><input type='number' value='${val}' style='width: 100%; font-size:18px;' oninput='updateTotal(this); saveData()' /></td>`);
+        }
+
+        document.write(`<td class='total-cell' style="font-weight:bold; font-size:18px;">0</td>`);
+        document.write('</tr>');
+      }
+    </script>
+  </tbody>
+</table>
+
+<script>
+  function updateTotal(input) {
+    const row = input.closest('tr');
+    const inputs = row.querySelectorAll('input[type="number"]');
+    let total = 0;
+    inputs.forEach(inp => {
+      total += parseFloat(inp.value) || 0;
+    });
+    row.querySelector('.total-cell').textContent = total;
+  }
+
+  function saveData() {
+    const rows = document.querySelectorAll('#tafseelTable tbody tr');
+    const allData = [];
+    rows.forEach(row => {
+      const tafseel = row.cells[0].innerText.trim();
+      const inputs = row.querySelectorAll('input');
+      const data = Array.from(inputs).map(i => i.value);
+      allData.push({ tafseel, data });
+    });
+    localStorage.setItem('tafseelData', JSON.stringify(allData));
+  }
+
+  function clearTable() {
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(inp => inp.value = '');
+    document.querySelectorAll('.total-cell').forEach(cell => cell.textContent = '0');
+    saveData();
+  }
+
+  function toggleLanguage() {
+    if (document.body.dir === 'rtl') {
+      document.body.dir = 'ltr';
+      document.body.lang = 'en';
+    } else {
+      document.body.dir = 'rtl';
+      document.body.lang = 'ur';
+    }
+  }
+
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    html2canvas(document.body).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'pt', [canvas.width, canvas.height]);
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save("daily-aamal-snapshot.pdf");
+    });
+  }
+
+  window.onload = () => {
+    document.querySelectorAll('#tafseelTable tbody tr').forEach(row => {
+      updateTotal(row.querySelector('input'));
+    });
+  };
+</script>
+
+</body>
+</html>
